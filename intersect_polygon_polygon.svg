@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="ISO-8859-1" standalone="no"?>
+<svg onload="init(evt)"
+     xmlns="http://www.w3.org/2000/svg"
+     xmlns:xlink="http://www.w3.org/1999/xlink"
+     xmlns:gui="http://www.kevlindev.com/gui">
+    <script type="text/ecmascript" xlink:href="2D.js"/>
+    <script type="text/ecmascript" xlink:href="IntersectionUtilities.js"/>
+    <defs>
+        <g id="intersection">
+            <circle r="3" fill="none" stroke="red" stroke-width="1"/>
+            <circle r="1" fill="black"/>
+        </g>
+    </defs>
+    <rect id="background" width="100%" height="100%" opacity="0"
+          onmousedown="mouser.unregisterShapes()"/>
+    <polygon gui:edit="editable" points="48,20 100,17 125,98 64,130 18,98"
+             fill="blue" opacity="0.5"/>
+    <polygon gui:edit="editable" points="20,48 17,100 98,125 130,64 98,18 43,16"
+             fill="orange" opacity="0.5"/>
+    <text id="info" x="5" y="10pt" font-size="10pt">Loading...</text>
+</svg>
