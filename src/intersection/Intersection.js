@@ -2,7 +2,7 @@
 *
 *   Intersection.js
 *
-*   copyright 2002, Kevin Lindsey
+*   copyright 2002-2003, Kevin Lindsey
 *
 *****/
 
@@ -111,12 +111,16 @@ Intersection.intersectPathShape = function(path, shape) {
 *
 *****/
 Intersection.intersectBezier2Bezier2 = function(a1, a2, a3, b1, b2, b3) {
-    var a, b;
-    var c12, c11, c10;
-    var c22, c21, c20;
-    var result = new Intersection("No Intersection");
-    var poly;
+    var a, b;               // temporary variables
+    var c12, c11, c10;      // curve one coefficients
+    var c22, c21, c20;      // curve two coefficients
+    var TOLERANCE = 1e-4;   // determines when two roots are considered equal
 
+    var result = new Intersection("No Intersection");
+
+    // convert from Berstein to quadratic
+    
+    // calculate curve one
     a = a2.multiply(-2);
     c12 = a1.add(a.add(a3));
 
@@ -126,6 +130,7 @@ Intersection.intersectBezier2Bezier2 = function(a1, a2, a3, b1, b2, b3) {
 
     c10 = new Point2D(a1.x, a1.y);
 
+    // calculate curve two
     a = b2.multiply(-2);
     c22 = b1.add(a.add(b3));
 
@@ -134,56 +139,98 @@ Intersection.intersectBezier2Bezier2 = function(a1, a2, a3, b1, b2, b3) {
     c21 = a.add(b);
 
     c20 = new Point2D(b1.x, b1.y);
-    
-    if ( c12.y == 0 ) {
-        var v0 = c12.x*(c10.y - c20.y);
-        var v1 = v0 - c11.x*c11.y;
-        var v2 = v0 + v1;
-        var v3 = c11.y*c11.y;
 
-        poly = new Polynomial(
-            c12.x*c22.y*c22.y,
-            2*c12.x*c21.y*c22.y,
-            c12.x*c21.y*c21.y - c22.x*v3 - c22.y*v0 - c22.y*v1,
-            -c21.x*v3 - c21.y*v0 - c21.y*v1,
-            (c10.x - c20.x)*v3 + (c10.y - c20.y)*v1
-        );
-    } else {
-        var v0 = c12.x*c22.y - c12.y*c22.x;
-        var v1 = c12.x*c21.y - c21.x*c12.y;
-        var v2 = c11.x*c12.y - c11.y*c12.x;
-        var v3 = c10.y - c20.y;
-        var v4 = c12.y*(c10.x - c20.x) - c12.x*v3;
-        var v5 = -c11.y*v2 + c12.y*v4;
-        var v6 = v2*v2;
+    // build sub-expressions used to build polynomial
+    // these were calculated via a Bezout resultant
+    //
+    // x1 = x component of the first parametric curve
+    // y1 = y component of the first parametric curve
+    // x2 = x component of the second parametric curve
+    // y2 = y component of the second parametric curve
+    // 
+    // x1 = c12.x*t^2 + c11.x*t + c10.x
+    // y1 = c12.y*t^2 + c11.y*t + c10.y
+    // x2 = c22.x*s^2 + c21.x*s + c20.x
+    // y2 = c22.y*s^2 + c21.y*s + c20.y
+    //
+    // collect the following two equations in terms of t
+    // x2 - x1 = (-c12.x)*t^2 + (-c11.x)*t + (-c10.x + c20.x + c21.x*s + c22.x*s^2)
+    // y2 - y1 = (-c12.y)*t^2 + (-c11.y)*t + (-c10.y + c20.y + c21.y*s + c22.y*s^2)
+    //
+    // We only need to work with the coefficients of these two polynomials
+    // The coefficients are designated above using parentheses
+    //
+    // A = list coeffients of x2 - x1 in terms of t
+    // B = list coeffients of y2 - y1 in terms of t
+    //
+    // Find Bezout Matrix for the two second order polynomials
+    //                /               \
+    //                | v[2,1] v[2,0] |
+    // bezoutMatrix = |               |
+    //                | v[2,0] v[1,0] |
+    //                \               /
+    //
+    // The elements of the Bezout Matrix are defined by the following
+    // v[i,j] = A[i]*B[j] - A[j]*B[i]
+    //
+    // where A[x] and B[x] are defined as
+    // A[x] = coefficient in list A for the monomial of power x
+    // B[x] = coefficient in list B for the monomial of power x
+    //
+    // In this case here, we end up with polynomials with the following
+    // structure
+    //                /                                  \
+    //                |        a         e*s^2 + f*s + g |
+    // bezoutMatrix = |                                  |
+    //                | e*s^2 + f*s + g  b*s^2 + c*s + d |
+    //                \                                  /
+    //
+    var a = c12.x*c11.y - c11.x*c12.y;
+    var b = c22.x*c11.y - c11.x*c22.y;
+    var c = c21.x*c11.y - c11.x*c21.y;
+    var d = c11.x*(c10.y - c20.y) + c11.y*(-c10.x + c20.x);
+    var e = c22.x*c12.y - c12.x*c22.y;
+    var f = c21.x*c12.y - c12.x*c21.y;
+    var g = c12.x*(c10.y - c20.y) + c12.y*(-c10.x + c20.x);
 
-        poly = new Polynomial(
-            v0*v0,
-            2*v0*v1,
-            (-c22.y*v6 + c12.y*v1*v1 + c12.y*v0*v4 + v0*v5) / c12.y,
-            (-c21.y*v6 + c12.y*v1*v4 + v1*v5) / c12.y,
-            (v3*v6 + v4*v5) / c12.y
-        );
-    }
-
+    // The coefficients of this polynomial come from the Bezout resultant which
+    // is the determinant of the bezoutMatrix defined above
+    //
+    //     /     \
+    //     | p q |
+    // Det |     | = ps - qr
+    //     | r s |
+    //     \     /
+    //
+    // Det(bezoutMatrix) = a*(b*s^2 + c*s + d) - (e*s^2 + f*s + g)^2
+    //
+    // When this is expanded and collected in terms of s, you end up with the
+    // polynomial defined here
+    //
+    var poly = new Polynomial(
+        -e*e,
+        -2*e*f,
+        a*b - f*f - 2*e*g,
+        a*c - 2*f*g,
+        a*d - g*g
+    );
     var roots = poly.getRoots();
     for ( var i = 0; i < roots.length; i++ ) {
         var s = roots[i];
 
         if ( 0 <= s && s <= 1 ) {
             var xRoots = new Polynomial(
-                c12.x,
-                c11.x,
-                c10.x - c20.x - s*c21.x - s*s*c22.x
+                -c12.x,
+                -c11.x,
+                -c10.x + c20.x + s*c21.x + s*s*c22.x
             ).getRoots();
             var yRoots = new Polynomial(
-                c12.y,
-                c11.y,
-                c10.y - c20.y - s*c21.y - s*s*c22.y
+                -c12.y,
+                -c11.y,
+                -c10.y + c20.y + s*c21.y + s*s*c22.y
             ).getRoots();
 
             if ( xRoots.length > 0 && yRoots.length > 0 ) {
-                var TOLERANCE = 1e-4;
 
                 checkRoots:
                 for ( var j = 0; j < xRoots.length; j++ ) {
@@ -201,8 +248,6 @@ Intersection.intersectBezier2Bezier2 = function(a1, a2, a3, b1, b2, b3) {
             }
         }
     }
-
-    if ( result.points.length > 0 ) result.status = "Intersection";
 
     return result;
 };
