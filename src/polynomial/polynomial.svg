@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="ISO-8859-1" standalone="no"?>
+<svg onload="init(evt)"
+     xmlns="http://www.w3.org/2000/svg"
+     xmlns:xlink="http://www.w3.org/1999/xlink">
+    <script type="text/ecmascript" xlink:href="Polynomial.js"/>
+    <script type="text/ecmascript"><![CDATA[
+        var svgns   = "http://www.w3.org/2000/svg";
+        var minx    = -1.125;
+        var maxx    = 1.125;
+        var xScale  = 75;
+        var yScale  = 30;
+        var steps   = 10;
+        var top     = 25;
+        var left    = 25;
+        var padding = 50;
+
+        function init(e) {
+            if ( window.svgDocument == null )
+                svgDocument = e.target.ownerDocument;
+
+            var mono1 = new Polynomial(1, -1   );
+            var mono2 = new Polynomial(1, -0.25);
+            var mono3 = new Polynomial(1,  0.25);
+            var mono4 = new Polynomial(1,  1   );
+
+            var poly1 = mono1;
+            var poly2 = poly1.multiply(mono2);
+            var poly3 = poly2.multiply(mono3);
+            var poly4 = poly3.multiply(mono4);
+
+            makeGraph(poly1);
+            makeGraph(poly2);
+            makeGraph(poly3);
+            makeGraph(poly4);
+        }
+
+        function makeGraph(poly) {
+            var g = svgDocument.createElementNS(svgns, "g");
+
+            g.appendChild( createLabel(poly) );
+            g.appendChild( createAxis() );
+
+            plotPoly(poly, g);
+            plotRoots(poly, g);
+
+            svgDocument.documentElement.appendChild(g);
+
+            var bbox = g.getBBox();
+            g.setAttributeNS(
+                null,
+                "transform",
+                "translate(" + (left-bbox.x) + "," + (top-bbox.y) + ")"
+            );
+
+            top += bbox.height + padding;
+        }
+
+        function createAxis() {
+            var line = svgDocument.createElementNS(svgns, "line");
+
+            line.setAttributeNS(null, "x1", minx * xScale * 1.125);
+            line.setAttributeNS(null, "x2", maxx * xScale * 1.125);
+            line.setAttributeNS(null, "stroke", "darkgray");
+
+            return line;
+        }
+
+        function createLabel(msg) {
+            var text = svgDocument.createElementNS(svgns, "text");
+            var tnode = svgDocument.createTextNode(msg);
+            
+            text.setAttributeNS(null, "x", maxx * xScale * 1.25);
+            text.setAttributeNS(null, "y", "0.33em");
+            text.appendChild(tnode);
+
+            return text;
+        }
+
+        function createMark(id, x, y) {
+            var use = svgDocument.createElementNS(svgns, "use");
+
+            use.setAttributeNS(
+                "http://www.w3.org/1999/xlink",
+                "href",
+                id
+            );
+            use.setAttributeNS(null, "x", x * xScale);
+            use.setAttributeNS(null, "y", y * yScale);
+
+            return use;
+        }
+
+        function plotPoly(poly, parent) {
+            for ( var i = 0; i <= steps; i++ ) {
+                var x = minx + i * (maxx - minx) / steps;
+
+                parent.appendChild(
+                    createMark( "#point", x, poly.eval(x) )
+                );
+            }
+        }
+
+        function plotRoots(poly, parent) {
+            var roots = poly.getRoots();
+
+            for ( var i = 0; i < roots.length; i++ ) {
+                var root = roots[i];
+                
+                parent.appendChild(
+                    createMark( "#root", root, poly.eval(root) )
+                );
+            }
+        }
+    ]]></script>
+    <defs>
+        <g id="point" opacity="0.75">
+            <circle r="3" fill="none" stroke="red" stroke-width="0.75"/>
+            <circle r="1" fill="red"/>
+        </g>
+        <g id="root" opacity="0.75">
+            <circle r="3" fill="none" stroke="blue" stroke-width="0.5"/>
+            <circle r="1" fill="blue"/>
+        </g>
+    </defs>
+    <rect width="100%" height="100%" fill="linen"/>
+</svg>
