@@ -536,7 +536,7 @@ Polynomial.prototype.getCubicRoots = function() {
         var discrim = b*b/4 + a*a*a/27;
         var halfB   = b / 2;
 
-        if ( Math.abs(discrim) <= Polynomial.TOLERANCE ) disrim = 0;
+        if ( Math.abs(discrim) <= Polynomial.TOLERANCE ) discrim = 0;
         
         if ( discrim > 0 ) {
             var e = Math.sqrt(discrim);
