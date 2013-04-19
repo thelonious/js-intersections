@@ -1,0 +1,87 @@
+# 0
+program
+    statements
+
+# 1
+statements
+    statements statement
+    statement
+
+# 2
+statement
+    type_def
+    func_def
+
+# 3
+type_def
+    TYPE IDENTIFIER INDENT type_statements DEDENT
+    TYPE IDENTIFIER LT identifiers GT INDENT type_statements DEDENT
+
+func_def
+    func_header INDENT body_statements DEDENT
+
+# 4
+type_statements
+    type_statements type_statement
+    type_statement
+
+identifiers
+    identifiers COMMA IDENTIFIER
+    IDENTIFIER
+
+func_header
+    DEF IDENTIFIER
+    DEF IDENTIFIER LP parameters RP
+    DEF IDENTIFIER ARROW type_ref
+    DEF IDENTIFIER LP parameters RP ARROW type_ref
+
+body_statements
+    body_statements body_statement
+    body_statement
+
+# 5
+type_statement
+    property_def
+    method_def
+
+parameters
+    parameters COMMA parameter
+    parameter
+
+type_ref
+    IDENTIFIER
+    IDENTIFIER LT identifiers RT
+
+body_statement
+    assignment
+
+# 6
+property_def
+    IDENTIFIER COLON type_ref
+
+method_def
+    IDENTIFIER COLON def_type
+
+parameter
+    IDENTIFIER COLON type_ref
+
+assignment
+    IDENTIFIER CE IDENTIFIER operator IDENTFIER
+
+# 7
+def_type
+    DEF
+    DEF LP type_refs RP
+    DEF ARROW type_ref
+    DEF LP type_refs RP ARROW type_ref
+
+operator
+    ADD
+    SUBTRACT
+    MULTIPLY
+    DIVIDE
+
+# 8
+type_refs
+    type_refs type_ref
+    type_ref
