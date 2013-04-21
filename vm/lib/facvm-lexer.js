@@ -90,36 +90,38 @@ Lexer.prototype.advanceWithIndents = function() {
     var candidate = this.nextLexeme();
 
     if (candidate.type === "NEWLINE" || candidate.type === "EOF") {
-        candidate = this.nextLexeme();
+        while (candidate.type === "NEWLINE") {
+            candidate = this.nextLexeme();
+        }
 
-        if (candidate.type === "TAB" || candidate.type === "EOF") {
-            // TODO: handle mix of tabs and whitespace
+        // TODO: handle mix of tabs and whitespace?
+        var text = (candidate.type === "TAB") ? candidate.text : "";
+        var count = (text.length - this.currentIndent.length) / this.indentText.length;
 
-            var text = (candidate.type === "EOF") ? "" : candidate.text;
-            var count = (text.length - this.currentIndent.length) / this.indentText.length;
+        if (count != 0) {
+            var start = candidate.offset;
+            var type;
 
-            if (count != 0) {
-                var start = candidate.offset;
-                var type;
-
-                if (count < 0) {
-                    count = -count;
-                    type = "DEDENT";
-                }
-                else {
-                    type = "INDENT";
-                }
-
-                for (var i = 0; i < count; i++) {
-                    var lexeme = this.createLexeme("", type);
-
-                    this.queue.push(lexeme);
-                }
-
-                this.currentIndent = text;
-
-                candidate = this.queue.shift();
+            // determine virtual token type
+            if (count < 0) {
+                count = -count;
+                type = "DEDENT";
             }
+            else {
+                type = "INDENT";
+            }
+
+            // enqueue virtual tokens
+            for (var i = 0; i < count; i++) {
+                this.queue.push(this.createLexeme("", type));
+            }
+
+            // save reference to current indent
+            this.currentIndent = text;
+
+            // dequeue first virtual token and use as our result
+            this.queue.push(candidate);
+            candidate = this.queue.shift();
         }
     }
 

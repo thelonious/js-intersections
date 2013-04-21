@@ -64,13 +64,16 @@ Parser.prototype.parseSource = function(source) {
     lexer.setSource(source);
     this.lexemes = lexer.getLexemes();
 
-    this.lexemes.forEach(function(lexeme) {
-        console.log(util.inspect(lexeme));
-    });
-
-    // this.currentIndex = -1;
-    // this.advance();
-    // this.parseProgram();
+    if (false) {
+        this.lexemes.forEach(function(lexeme) {
+            console.log(util.inspect(lexeme));
+        });
+    }
+    else {
+        this.currentIndex = -1;
+        this.advance();
+        this.parseProgram();
+    }
 };
 
 /*
@@ -110,20 +113,10 @@ Parser.prototype.parseProgram = function() {
 Parser.prototype.parseTypeDef = function() {
     this.assertTypeAndAdvance("TYPE");
 
-    this.assertType("IDENTIFIER");
-    this.advance();
-
-    if (this.isType("LT")) {
-        // advance over '<'
-        this.advance();
-
-        this.parseIdentifiers();
-
-        this.assertTypeAndAdvance("GT");
-    }
-    else {
-
-    }
+    this.parseTypeRef();
+    this.assertTypeAndAdvance("INDENT");
+    this.parseTypeStatements();
+    this.assertTypeAndAdvance("DEDENT");
 };
 
 /*
@@ -132,6 +125,70 @@ Parser.prototype.parseTypeDef = function() {
  */
 Parser.prototype.parseFunctionDef = function() {
     this.assertTypeAndAdvance("DEF");
+
+    this.assertType("IDENTIFIER");
+    this.advance();
+
+    if (this.isType("LPAREN")) {
+        this.advance();
+
+        if (this.isType("IDENTIFIER")) {
+            this.parseParameters();
+        }
+
+        this.assertTypeAndAdvance("RPAREN");
+    }
+
+    if (this.isType("ARROW")) {
+        this.advance();
+        this.parseTypeRef();
+    }
+
+    this.assertTypeAndAdvance("INDENT");
+    this.parseBodyStatements();
+    this.assertTypeAndAdvance("DEDENT");
+};
+
+Parser.prototype.parseTypeStatements = function() {
+    while (this.isType("IDENTIFIER")) {
+        this.assertType("IDENTIFIER");
+        this.advance();
+
+        this.assertTypeAndAdvance("COLON");
+
+        if (this.isType("DEF")) {
+            this.parseDefType();
+        }
+        else {
+            this.parseTypeRef();
+        }
+    }
+};
+
+Parser.prototype.parseBodyStatements = function() {
+    while (!this.isType("DEDENT") && !this.isType("EOF")) {
+        this.advance();
+    }
+};
+
+Parser.prototype.parseParameters = function() {
+    this.parseParameter();
+
+    while (this.isType("COMMA")) {
+        // advance over ','
+        this.advance();
+
+        this.parseParameter();
+    }
+};
+
+Parser.prototype.parseParameter = function() {
+    this.assertType("IDENTIFIER");
+    this.advance();
+
+    this.assertTypeAndAdvance("COLON");
+
+    this.parseTypeRef();
 };
 
 Parser.prototype.parseIdentifiers = function() {
@@ -156,6 +213,46 @@ Parser.prototype.parseIdentifiers = function() {
     }
 
     return identifiers;
+};
+
+Parser.prototype.parseDefType = function() {
+    this.assertTypeAndAdvance("DEF");
+
+    if (this.isType("LPAREN")) {
+        this.advance();
+        if (this.isType("IDENTIFIER")) {
+            this.parseTypeRefs();
+        }
+        this.assertTypeAndAdvance("RPAREN");
+    }
+    if (this.isType("ARROW")) {
+        this.advance();
+        this.parseTypeRef();
+    }
+};
+
+Parser.prototype.parseTypeRefs = function() {
+    this.parseTypeRef();
+
+    while (this.isType("COMMA")) {
+        // advance over ','
+        this.advance();
+        this.parseTypeRef();
+    }
+};
+
+Parser.prototype.parseTypeRef = function() {
+    this.assertType("IDENTIFIER");
+    this.advance();
+
+    if (this.isType("LT")) {
+        // advance over '<'
+        this.advance();
+
+        this.parseIdentifiers();
+
+        this.assertTypeAndAdvance("GT");
+    }
 };
 
 // helper methods

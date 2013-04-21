@@ -1,0 +1,12 @@
+type Array<T>
+	set: def(UInteger, T)
+	get: def(UInteger) -> T
+	length: Number
+
+type Point2D
+	x: Number
+	y: Number
+
+type Intersection
+	comment: String
+	points: Array<Point2D>
